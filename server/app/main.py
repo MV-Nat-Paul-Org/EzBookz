@@ -12,15 +12,14 @@ from flask_cors import cross_origin
 from functools import wraps
 
 
-
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
 
 app = Flask(__name__)
+app.secret_key = env.get("APP_SECRET_KEY")
 oauth = OAuth(app)
 
-#Set up Auth0
 oauth.register(
     "auth0",
     client_id=env.get("AUTH0_CLIENT_ID"),
@@ -30,7 +29,8 @@ oauth.register(
     },
     server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
 )
-#Decorators (checks if the user is logged in before allowing them to access the route)
+
+# Decorators (checks if the user is logged in before allowing them to access the route)
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -49,45 +49,67 @@ def login():
 
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
-    try:
-        #Retrieve access token
-        token = oauth.auth0.authorize_access_token()
+    token = oauth.auth0.authorize_access_token()
+    session["user"] = token
+    return redirect("/")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(
+        "https://" + env.get("AUTH0_DOMAIN")
+        + "/v2/logout?"
+        + urlencode(
+            {
+                "returnTo": url_for("home", _external=True),
+                "client_id": env.get("AUTH0_CLIENT_ID"),
+            },
+            quote_via=quote_plus,
+        )
+    )
+
+# @app.route("/callback", methods=["GET", "POST"])
+# def callback():
+#     try:
+#         #Retrieve access token
+#         token = oauth.auth0.authorize_access_token()
         
-        #Retrieve user information
-        resp = oauth.auth0.get('userinfo')
-        userinfo = resp.json() 
+#         #Retrieve user information
+#         resp = oauth.auth0.get('userinfo')
+#         userinfo = resp.json() 
         
-        #Check if user exists in database 
-        user = User.query.filter_by(auth0_user_id=userinfo['sub']).first()
+#         #Check if user exists in database 
+#         user = User.query.filter_by(auth0_user_id=userinfo['sub']).first()
     
-        #If user does not exist, add user to database
-        if user is None:
-            user = User(
-                auth0_user_id=userinfo['sub'],
-                name=userinfo['name'],
-                email=userinfo['email']
-            )
-            db.session.add(user)
-            db.session.commit() 
+#         #If user does not exist, add user to database
+#         if user is None:
+#             user = User(
+#                 auth0_user_id=userinfo['sub'],
+#                 name=userinfo['name'],
+#                 email=userinfo['email']
+#             )
+#             db.session.add(user)
+#             db.session.commit() 
         
-        # Save the user information in the session
-        session['jwt_payload'] = userinfo
-        session['profile'] = {
-            'user_id': user.id,
-            'name': userinfo['name'],
-            'email': userinfo['email'],
-            'picture': userinfo['picture']
-        }
-        return redirect('/')
-    except Exception as e:
-        print(e)
-        return redirect('/Error')
+#         # Save the user information in the session
+#         session['jwt_payload'] = userinfo
+#         session['profile'] = {
+#             'user_id': user.id,
+#             'name': userinfo['name'],
+#             'email': userinfo['email'],
+#             'picture': userinfo['picture']
+#         }
+#         return redirect('/')
+#     except Exception as e:
+#         print(e)
+#         return redirect('/Error')
         
-@app.route("/api/slots", methods=["GET"])
+# @app.route("/api/slots", methods=["GET"])
 @requires_auth
 def get_slots():
         slots = Appointment.query.filter_by(available=True).all()
         return jsonify([slot.serialize() for slot in slots])
+
 
 @app.route("/api/slots/<int:slot_id>/book", methods=["POST"])
 @requires_auth
@@ -159,17 +181,6 @@ def private_scoped():
         "description": "You don't have access to this resource"
     }, 403)
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(
-        "https://" + env.get("AUTH0_DOMAIN")
-        + "/v2/logout?"
-        + urlencode(
-            {
-                "returnTo": url_for("home", _external=True),
-                "client_id": env.get("AUTH0_CLIENT_ID"),
-            },
-            quote_via=quote_plus,
-        )
-    )
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=env.get("PORT", 3000))
