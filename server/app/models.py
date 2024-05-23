@@ -7,21 +7,15 @@ db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
-
-class Admin(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(100), unique=True)
+    auth0_user_id = db.Column(db.String(256), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
 
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.Date)
-    time = db.Column(db.Time)
+    date = db.Column(db.Date, nullable=False)
+    time = db.Column(db.Time, nullable=False)
     available = db.Column(db.Boolean, default=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     user = db.relationship('User', backref=db.backref('appointments', lazy=True))
-    admin_id = db.Column(db.Integer, db.ForeignKey('admin.id'))
-    admin = db.relationship('Admin', backref=db.backref('appointments', lazy=True))
 
