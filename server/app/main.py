@@ -1,16 +1,15 @@
 # routes and endpoints
-from flask import Flask, request, jsonify, redirect, render_template, session, url_for
+from flask import Flask, request, jsonify, redirect, render_template, session, url_for, g
 from config import app, db  # added space after comma
+import requests
 # import modules: from models import <Model>
 from models import User, Appointment
 from os import environ as env
 from dotenv import find_dotenv, load_dotenv
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
-import json
 from flask_cors import cross_origin
 from functools import wraps
-
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -56,130 +55,64 @@ def callback():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(
-        "https://" + env.get("AUTH0_DOMAIN")
-        + "/v2/logout?"
-        + urlencode(
-            {
-                "returnTo": url_for("home", _external=True),
-                "client_id": env.get("AUTH0_CLIENT_ID"),
-            },
-            quote_via=quote_plus,
-        )
-    )
+    # When logged out redirect to home screen to promp login again
+    return redirect("/")
 
-# @app.route("/callback", methods=["GET", "POST"])
-# def callback():
-#     try:
-#         #Retrieve access token
-#         token = oauth.auth0.authorize_access_token()
-        
-#         #Retrieve user information
-#         resp = oauth.auth0.get('userinfo')
-#         userinfo = resp.json() 
-        
-#         #Check if user exists in database 
-#         user = User.query.filter_by(auth0_user_id=userinfo['sub']).first()
+@app.before_request
+def load_logged_in_user():
+    user = session.get('user')
+
+    if user is None:
+        g.user = None
+    else:
+        g.user = user
+
+# Check if user is an Admin
+def is_Admin(users_arr, email):
+    for user in users_arr:
+        if user.get('email') == email:
+            return True
+    return False
+
+@app.route("/")
+def home():
+    if g.user:
+      userToShow = g.get('user')['userinfo']['name']
+      return f"<h1>Hello {userToShow}, to view appointments go to /appointments</h1>"
+    else:
+      return f"<h1>Please login at /login</h1>"
     
-#         #If user does not exist, add user to database
-#         if user is None:
-#             user = User(
-#                 auth0_user_id=userinfo['sub'],
-#                 name=userinfo['name'],
-#                 email=userinfo['email']
-#             )
-#             db.session.add(user)
-#             db.session.commit() 
-        
-#         # Save the user information in the session
-#         session['jwt_payload'] = userinfo
-#         session['profile'] = {
-#             'user_id': user.id,
-#             'name': userinfo['name'],
-#             'email': userinfo['email'],
-#             'picture': userinfo['picture']
-#         }
-#         return redirect('/')
-#     except Exception as e:
-#         print(e)
-#         return redirect('/Error')
-        
-# @app.route("/api/slots", methods=["GET"])
-@requires_auth
-def get_slots():
-        slots = Appointment.query.filter_by(available=True).all()
-        return jsonify([slot.serialize() for slot in slots])
+@app.route("/appointments")
+def get_appointments():
+    # get token
+    token_url = f'https://{env.get("AUTH0_DOMAIN")}/oauth/token'
+    token_payload = {
+        'client_id': env.get("AUTH0_CLIENT_ID"),
+        'client_secret': env.get("AUTH0_CLIENT_SECRET"),
+        'audience': env.get("AUDIENCE"),
+        'grant_type': 'client_credentials'
+    }
+    token_response = requests.post(token_url, json=token_payload)
+    token_data = token_response.json()
+    access_token = token_data['access_token']
 
+    # get users for the admin role
+    users_url = f'https://{env.get("AUTH0_DOMAIN")}/api/v2/roles/{env.get("ROLE_ID")}/users'
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
+    admin_users_response = requests.get(users_url, headers=headers)
+    admin_users_data = admin_users_response.json()
 
-@app.route("/api/slots/<int:slot_id>/book", methods=["POST"])
-@requires_auth
-def book_slot(slot_id):
-    slot = Appointment.query.get(slot_id)
-    if slot is None or not slot.available:
-        abort(404, description="Slot not found or not available")
-    slot.available = False
-    slot.user_id = session['profile']['user_id']
-    db.session.commit()
-    return jsonify(slot.serialize())
+    # Get current users email
+    user_email = g.get('user')['userinfo']['email']
 
-@app.route("/api/slots/<int:slot_id>/cancel", methods=["POST"])
-@requires_auth
-def cancel_slot(slot_id):
-    slot = Appointment.query.get(slot_id)
-    if slot is None or slot.available or slot.user_id != session['profile']['user_id']:
-        abort(404, description="Slot not found, not booked, or not booked by this user")
-    slot.available = True
-    slot.user_id = None
-    db.session.commit()
-    return jsonify(slot.serialize())
-
-@app.route("/api/slots/<int:slot_id>/open", methods=["POST"])
-@requires_auth
-def open_slot(slot_id):
-    try:
-        token_info = oauth.auth0.parse_id_token(oauth.auth0.token)
-        user_role = token_info['https://example.com/role']
-    except TokenError:
-        abort(403, description="Invalid token")
-
-    if user_role != 'admin':
-        abort(403, description="Only admins can open slots")
-
-    slot = Appointment.query.get(slot_id)
-    if slot is None or slot.available:
-        abort(404, description="Slot not found or already available")
-    slot.available = True
-    slot.user_id = None
-    db.session.commit()
-    return jsonify(slot.serialize())
-
-# This doesn't need authentication
-@app.route("/api/public")
-@cross_origin(headers=["Content-Type", "Authorization"])
-def public():
-    response = "Hello from a public endpoint! You don't need to be authenticated to see this."
-    return jsonify(message=response)
-
-# This needs authentication
-@app.route("/api/private")
-@cross_origin(headers=["Content-Type", "Authorization"])
-@requires_auth
-def private():
-    response = "Hello from a private endpoint! You need to be authenticated to see this."
-    return jsonify(message=response)
-
-# This needs authorization
-@app.route("/api/private-scoped")
-@cross_origin(headers=["Content-Type", "Authorization"])
-@requires_auth
-def private_scoped():
-    if requires_scope("read:messages"):
-        response = "Hello from a private endpoint! You need to be authenticated and have a scope of read:messages to see this."
-        return jsonify(message=response)
-    raise AuthError({
-        "code": "Unauthorized",
-        "description": "You don't have access to this resource"
-    }, 403)
+    # Run function to check if user is admin to display correct appointments
+    if is_Admin(admin_users_data, user_email):
+        return jsonify({"message": "All Appointments"})
+    else:
+        return jsonify({"message": "All available appointments"})
 
 
 if __name__ == "__main__":
