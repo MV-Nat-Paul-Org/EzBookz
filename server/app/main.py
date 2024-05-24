@@ -84,35 +84,38 @@ def home():
     
 @app.route("/appointments")
 def get_appointments():
-    # get token
-    token_url = f'https://{env.get("AUTH0_DOMAIN")}/oauth/token'
-    token_payload = {
-        'client_id': env.get("AUTH0_CLIENT_ID"),
-        'client_secret': env.get("AUTH0_CLIENT_SECRET"),
-        'audience': env.get("AUDIENCE"),
-        'grant_type': 'client_credentials'
-    }
-    token_response = requests.post(token_url, json=token_payload)
-    token_data = token_response.json()
-    access_token = token_data['access_token']
+    if g.user: 
+        # get token
+        token_url = f'https://{env.get("AUTH0_DOMAIN")}/oauth/token'
+        token_payload = {
+            'client_id': env.get("AUTH0_CLIENT_ID"),
+            'client_secret': env.get("AUTH0_CLIENT_SECRET"),
+            'audience': env.get("AUDIENCE"),
+            'grant_type': 'client_credentials'
+        }
+        token_response = requests.post(token_url, json=token_payload)
+        token_data = token_response.json()
+        access_token = token_data['access_token']
 
-    # get users for the admin role
-    users_url = f'https://{env.get("AUTH0_DOMAIN")}/api/v2/roles/{env.get("ROLE_ID")}/users'
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json'
-    }
-    admin_users_response = requests.get(users_url, headers=headers)
-    admin_users_data = admin_users_response.json()
+        # get users for the admin role
+        users_url = f'https://{env.get("AUTH0_DOMAIN")}/api/v2/roles/{env.get("ROLE_ID")}/users'
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
+        admin_users_response = requests.get(users_url, headers=headers)
+        admin_users_data = admin_users_response.json()
 
-    # Get current users email
-    user_email = g.get('user')['userinfo']['email']
+        # Get current users email
+        user_email = g.get('user')['userinfo']['email']
 
-    # Run function to check if user is admin to display correct appointments
-    if is_Admin(admin_users_data, user_email):
-        return jsonify({"message": "All Appointments"})
+        # Run function to check if user is admin to display correct appointments
+        if is_Admin(admin_users_data, user_email):
+            return jsonify({"message": "All Appointments"})
+        else:
+            return jsonify({"message": "All available appointments"})
     else:
-        return jsonify({"message": "All available appointments"})
+        return f"<h1>Please login at /login to view appointments</h1>"
 
 
 if __name__ == "__main__":
