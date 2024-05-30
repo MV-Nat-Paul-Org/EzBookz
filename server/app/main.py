@@ -29,17 +29,6 @@ oauth.register(
     server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
 )
 
-# Decorators (checks if the user is logged in before allowing them to access the route)
-def requires_auth(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'profile' not in session:
-            # No user is logged in
-            abort(401)  # Unauthorized
-        return f(*args, **kwargs)
-    return decorated
-
-
 @app.route("/login")
 def login():
     return oauth.auth0.authorize_redirect(
@@ -68,24 +57,8 @@ def load_logged_in_user():
         g.user = user
 
 # Check if user is an Admin
-def is_Admin(users_arr, email):
-    for user in users_arr:
-        if user.get('email') == email:
-            return True
-    return False
-
-@app.route("/")
-def home():
-    if g.user:
-      userToShow = g.get('user')['userinfo']['name']
-      return f"<h1>Hello {userToShow}, to view appointments go to /appointments</h1>"
-    else:
-      return f"<h1>Please login at /login</h1>"
-    
-@app.route("/appointments")
-def get_appointments():
-    if g.user: 
-        # get token
+def is_Admin():
+     # get token
         token_url = f'https://{env.get("AUTH0_DOMAIN")}/oauth/token'
         token_payload = {
             'client_id': env.get("AUTH0_CLIENT_ID"),
@@ -109,8 +82,24 @@ def get_appointments():
         # Get current users email
         user_email = g.get('user')['userinfo']['email']
 
+        for user in admin_users_data:
+            if user.get('email') == user_email:
+                return True
+        return False
+
+@app.route("/")
+def home():
+    if g.user:
+      userToShow = g.get('user')['userinfo']['name']
+      return f"<h1>Hello {userToShow}, to view appointments go to /appointments</h1>"
+    else:
+      return f"<h1>Please login at /login</h1>"
+    
+@app.route("/appointments")
+def get_appointments():
+    if g.user: 
         # Run function to check if user is admin to display correct appointments
-        if is_Admin(admin_users_data, user_email):
+        if is_Admin():
             return jsonify({"message": "All Appointments"})
         else:
             return jsonify({"message": "All available appointments"})
