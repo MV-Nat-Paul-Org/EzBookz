@@ -89,22 +89,31 @@ def is_Admin():
 
 @app.route("/")
 def home():
-    if g.user:
-      userToShow = g.get('user')['userinfo']['name']
-      return f"<h1>Hello {userToShow}, to view appointments go to /appointments</h1>"
+    # if g.user:
+    #   userToShow = g.get('user')['userinfo']['name']
+    #   return f"<h1>Hello {userToShow}, to view appointments go to /appointments</h1>"
+    # else:
+    #   return f"<h1>Please login at /login</h1>"
+    return render_template("home.html", session=session.get('user'))
+
+    
+@app.route("/admin")
+def get_admin():
+    if g.user: 
+        return jsonify({"message": is_Admin()})
     else:
-      return f"<h1>Please login at /login</h1>"
+        return jsonify({"message": "Please log in"})
     
 @app.route("/appointments")
 def get_appointments():
     if g.user: 
         # Run function to check if user is admin to display correct appointments
         if is_Admin():
-            return jsonify({"message": "All Appointments"})
+            return render_template("all-appointments.html", session=session.get('user'))
         else:
-            return jsonify({"message": "All available appointments"})
+            return render_template("available-appointments.html", session=session.get('user'))
     else:
-        return f"<h1>Please login at /login to view appointments</h1>"
+        return render_template("home.html", session=session.get('user'))
 
 
 if __name__ == "__main__":

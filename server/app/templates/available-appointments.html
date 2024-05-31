@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>EzBookz | Available Appointments</title>
+    <style>
+      body {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 30px;
+        text-align: center;
+      }
+
+      .btn-container {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .btn {
+        cursor: pointer;
+        display: inline-block;
+        padding: 10px;
+        background-color: #87cefa;
+        border-radius: 10px;
+        transition: 0.2s;
+      }
+
+      .btn:hover {
+        background-color: #66b3e3;
+      }
+
+      .btn-link {
+        text-decoration: none;
+        color: black;
+      }
+    </style>
+  </head>
+  <body>
+    {% if session %}
+    <h1>Available Appointments</h1>
+    <div class="btn-container">
+      <p class="btn">
+        <a aria-colspan="btn-link" class="btn" href="/">Home</a>
+      </p>
+      <p class="btn"><a class="btn-link" href="/logout">Logout</a></p>
+    </div>
+    {% else %}
+    <h1>Welcome, Please Login to view appointments.</h1>
+    <div class="btn-container">
+      <p class="btn"><a class="btn-link" href="/login">Login</a></p>
+    </div>
+    {% endif %}
+  </body>
+</html>
