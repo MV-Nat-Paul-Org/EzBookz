@@ -104,17 +104,100 @@ def get_admin():
     else:
         return jsonify({"message": "Please log in"})
     
-@app.route("/appointments")
+
+################ ORIGINAL /APPOINTMENTS ROUTE ################
+# @app.route("/appointments")
+# def get_appointments():
+#     if g.user: 
+#         # Run function to check if user is admin to display correct appointments
+#         if is_Admin():
+#             return render_template("all-appointments.html", session=session.get('user'))
+#         else:
+#             return render_template("available-appointments.html", session=session.get('user'))
+#     else:
+#         return render_template("home.html", session=session.get('user'))
+############################################################
+
+@app.route("/appointments", methods=["GET"])
 def get_appointments():
-    if g.user: 
-        # Run function to check if user is admin to display correct appointments
+    if g.user:
         if is_Admin():
-            return render_template("all-appointments.html", session=session.get('user'))
+            appointments = Appointment.query.all()
+            return render_template("all-appointments.html", appointments=appointments, session=session.get('user'))
         else:
-            return render_template("available-appointments.html", session=session.get('user'))
+            appointments = Appointment.query.filter_by(available=True).all()
+            return render_template("available-appointments.html", appointments=appointments, session=session.get('user'))
     else:
         return render_template("home.html", session=session.get('user'))
 
+@app.route("/appointments", methods=["POST"])
+def create_appointment():
+    if g.user and is_Admin():
+        try:
+            data = request.get_json()
+            new_appointment = Appointment(**data)
+            db.session.add(new_appointment)
+            db.session.commit()
+            return redirect(url_for('get_appointments'))
+        except Exception as e:
+            return str(e), 400
+    else:
+        return render_template("home.html", session=session.get('user'))
+
+@app.route("/appointments/<int:appointment_id>", methods=["GET"])
+def get_appointment(appointment_id):
+    if g.user:
+        appointment = Appointment.query.get(appointment_id)
+        if appointment:
+            return render_template("appointment.html", appointment=appointment, session=session.get('user'))
+        else:
+            return "Appointment not found", 404
+    else:
+        return render_template("home.html", session=session.get('user'))
+
+@app.route("/appointments/<int:appointment_id>", methods=["PUT"])
+def update_appointment(appointment_id):
+    if g.user and is_Admin():
+        appointment = Appointment.query.get(appointment_id)
+        if appointment:
+            try:
+                data = request.get_json()
+                for key, value in data.items():
+                    setattr(appointment, key, value)
+                db.session.commit()
+                return redirect(url_for('get_appointments'))
+            except Exception as e:
+                return str(e), 400
+        else:
+            return "Appointment not found", 404
+    else:
+        return render_template("home.html", session=session.get('user'))
+
+@app.route("/appointments/<int:appointment_id>", methods=["DELETE"])
+def delete_appointment(appointment_id):
+    if g.user and is_Admin():
+        appointment = Appointment.query.get(appointment_id)
+        if appointment:
+            db.session.delete(appointment)
+            db.session.commit()
+            return redirect(url_for('get_appointments'))
+        else:
+            return "Appointment not found", 404
+    else:
+        return render_template("home.html", session=session.get('user'))
+
+@app.route("/appointments/<int:appointment_id>/book", methods=["POST"])
+def book_appointment(appointment_id):
+    if g.user:
+        appointment = Appointment.query.get(appointment_id)
+        if appointment and appointment.available:
+            appointment.available = False
+            db.session.commit()
+            return redirect(url_for('get_appointments'))
+        else:
+            return "Appointment not available", 400
+    else:
+        return render_template("home.html", session=session.get('user'))
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))

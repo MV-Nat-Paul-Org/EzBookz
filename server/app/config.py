@@ -1,12 +1,16 @@
-# main configuration of app
+# config.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from flask_oauthlib.client import OAuth
 
-app = Flask(__name__)
-CORS(app)
+db = SQLAlchemy()
+oauth = OAuth()
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydatabase.db"
-app.config['SQLALCHEMU_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
+def create_app():
+    app = Flask(__name__)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///mydatabase.db"
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.secret_key = env.get("APP_SECRET_KEY")
+    db.init_app(app)
+    oauth.init_app(app)
+    return app
