@@ -1,28 +1,50 @@
 from flask import Flask
+from authlib.integrations.flask_client import OAuth
 from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
+from flask_migrate import Migrate
 from dotenv import load_dotenv
+from flask_session import Session
 import os
 
-# Initialize extensions
+# Initialize the SQLAlchemy ORM
 db = SQLAlchemy()
-cors = CORS()
+oauth = OAuth()
 
 def create_app():
-    
-    # Load environment variables
-    load_dotenv()
-    
+    """Create and configure an instance of the Flask application."""
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.getenv('APP_SECRET_KEY')
-    app.config['AUTH0_CLIENT_ID'] = os.getenv('AUTH0_CLIENT_ID')
-    app.config['AUTH0_CLIENT_SECRET'] = os.getenv('AUTH0_CLIENT_SECRET')
-    app.config['AUTH0_DOMAIN'] = os.getenv('AUTH0_DOMAIN')
-    app.config['AUTH0_CALLBACK_URL'] = os.getenv('AUTH0_CALLBACK_URL')
+    # Adjust the path to point to the .env file in the server directory
+    dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
+    load_dotenv(dotenv_path)
+    
+
+    # Configuration
+    app.config['SECRET_KEY'] = os.getenv('APP_SECRET_KEY', 'default_secret_key')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
-    
-    # Initialize extensions
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # Initialize plugins
     db.init_app(app)
-    cors.init_app(app)
     
+    # Initialize OAuth library
+    oauth.init_app(app)
+
+    # Auth0 configuration
+    oauth.register(
+        'auth0',
+        client_id=os.getenv('AUTH0_CLIENT_ID'),
+        client_secret=os.getenv('AUTH0_CLIENT_SECRET'),
+        client_kwargs={
+            'scope': 'openid profile email'
+        },
+        server_metadata_url=f'https://{os.getenv("AUTH0_DOMAIN")}/.well-known/openid-configuration'
+    )
+    
+    # Specify the migrations directory when initializing Flask-Migrate
+    migrate = Migrate(app, db, directory=os.path.join(os.path.dirname(__file__), 'migrations'))
+
+    # Register the routes from routes.py
+    from .routes import api
+    app.register_blueprint(api)
+
     return app
