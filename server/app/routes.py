@@ -123,13 +123,14 @@ def init_routes(app):
 
     @api.route('/appointments', methods=['GET'])
     def get_appointments():
-        if is_Admin():
-            appointments = Appointment.query.all()
-            return render_template("all-appointments.html", session=session.get('user'), appointments=appointments)
-        else:
-            appointments = Appointment.query.filter_by(type='available').all()
-            return render_template("available-appointments.html", session=session.get('user'), appointments=appointments)
-
+        if is_logged_in:
+            if is_Admin():
+                appointments = Appointment.query.all()
+                return render_template("all-appointments.html", session=session.get('user'), appointments=appointments)
+            else:
+                appointments = Appointment.query.filter_by(type='available').all()
+                return render_template("available-appointments.html", session=session.get('user'), appointments=appointments)
+        return jsonify({"error": "Please log in to view appointments"})
         
 
         ########### OLD CODE TO RETRIEVE DATABASE DATA JSONIFIED ################
