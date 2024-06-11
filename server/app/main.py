@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, redirect, render_template, session, u
 from config import app, db  # added space after comma
 import requests
 # import modules: from models import <Model>
-from models import User, Appointment
+from models import Appointment
 from os import environ as env
 from dotenv import find_dotenv, load_dotenv
 from urllib.parse import quote_plus, urlencode
@@ -115,6 +115,11 @@ def get_appointments():
     else:
         return render_template("home.html", session=session.get('user'))
 
+@app.route("/appointments", methods=["POST"])
+def create_appointment():
+    data = request.json
+
+    new_appointment
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=env.get("PORT", 3000))
