@@ -36,8 +36,8 @@ def seed_database():
             db.session.add(user2)
 
             today = datetime.now()
-            appointment1 = Appointment(title="Consultation", start_time=today + timedelta(days=1, hours=10), end_time=today + timedelta(days=1, hours=11), user_id=user1.id, type="consultation")
-            appointment2 = Appointment(title="Follow-up", start_time=today + timedelta(days=2, hours=14), end_time=today + timedelta(days=2, hours=15), user_id=user2.id, type="follow-up")
+            appointment1 = Appointment(title="Consultation", start_time=today + timedelta(days=1, hours=10), end_time=today + timedelta(days=1, hours=11), user_id=user1.id, type="available")
+            appointment2 = Appointment(title="Follow-up", start_time=today + timedelta(days=2, hours=14), end_time=today + timedelta(days=2, hours=15), user_id=user2.id, type="unavailable")
             db.session.add(appointment1)
             db.session.add(appointment2)
 

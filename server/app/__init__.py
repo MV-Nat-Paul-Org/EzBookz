@@ -9,6 +9,7 @@ import os
 # Initialize the SQLAlchemy ORM
 db = SQLAlchemy()
 oauth = OAuth()
+sess = Session()  # Session manager initialization
 
 def create_app():
     """Create and configure an instance of the Flask application."""
@@ -22,12 +23,16 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('APP_SECRET_KEY', 'default_secret_key')
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SESSION_TYPE'] = 'filesystem'  # Configure session type
+
 
     # Initialize plugins
     db.init_app(app)
     
     # Initialize OAuth library
     oauth.init_app(app)
+    
+    sess.init_app(app)  # Initialize session
 
     # Auth0 configuration
     oauth.register(
@@ -44,7 +49,8 @@ def create_app():
     migrate = Migrate(app, db, directory=os.path.join(os.path.dirname(__file__), 'migrations'))
 
     # Register the routes from routes.py
-    from .routes import api
-    app.register_blueprint(api)
+    from .routes import init_routes, setup_before_request_handlers
+    setup_before_request_handlers(app)
+    init_routes(app)
 
     return app
