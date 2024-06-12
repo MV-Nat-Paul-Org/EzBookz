@@ -76,39 +76,40 @@
       }
     </style>
     <script>
-      function resetAppointment(appointmentId, newType) {
-        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct and matches your API endpoint
-
+      function resetAppointment(appointmentId, currentType) {
+        const newType = currentType === 'unavailable' ? 'available' : 'unavailable'; // Toggle availability
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct
+    
         const data = {
-          type: newType,
+            type: newType,
         };
-
+    
         fetch(url, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(data),
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
         })
-          .then((response) => {
+        .then((response) => {
             if (!response.ok) {
-              throw new Error("Network response was not ok");
+                throw new Error("Network response was not ok");
             }
             return response.json();
-          })
-          .then((data) => {
+        })
+        .then((data) => {
             console.log("Success:", data);
-            alert("Appointment was reset successfully!");
-            window.location.reload(); // This line will reload the page after the appointment has been booked
-          })
-          .catch((error) => {
+            alert("Appointment status updated successfully!");
+            window.location.reload(); // Reload the page
+        })
+        .catch((error) => {
             console.error("Error:", error);
             alert("Error updating appointment: " + error.message);
-          });
-      }
+        });
+    }
 
       function deleteAppointment(appointmentId) {
-        const url = `/api/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
 
         fetch(url, {
           method: "DELETE",
@@ -165,7 +166,7 @@
               {% if appointment.type == 'unavailable' %}
               <button
                 class="btn"
-                onclick="resetAppointment('{{ appointment.id }}')"
+                onclick="resetAppointment('{{ appointment.id }}', '{{ appointment.type }}')"
               >
                 Reset
               </button>
