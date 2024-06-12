@@ -1,80 +1,198 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="utf-8" />
+  <head>
+    <meta charset="utf8" />
     <title>EzBookz | All Appointments</title>
-    <link href='fullcalendar/core/main.css' rel='stylesheet' />
-    <link href='fullcalendar/daygrid/main.css' rel='stylesheet' />
-    <script src='fullcalendar/core/main.js'></script>
-    <script src='fullcalendar/daygrid/main.js'></script>
     <style>
       body {
         padding: 1rem;
       }
-
       h1 {
         font-size: 30px;
         text-align: center;
       }
-
       .btn-container {
         display: flex;
         gap: 10px;
         align-items: center;
         justify-content: center;
       }
-
       .btn {
         cursor: pointer;
         display: inline-block;
         padding: 10px;
         background-color: #87cefa;
         border-radius: 10px;
+        border: none;
         transition: 0.2s;
+      }
+
+      .del-btn {
+        cursor: pointer;
+        display: inline-block;
+        padding: 10px;
+        background-color: #d53434;
+        border-radius: 10px;
+        border: none;
+        transition: 0.2s;
+        color: white;
       }
 
       .btn:hover {
         background-color: #66b3e3;
       }
 
+      .del-btn:hover {
+        background-color: #8a2121;
+      }
       .btn-link {
         text-decoration: none;
         color: black;
       }
+      .content-container {
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+      }
+      table {
+        width: 90%;
+        margin: 20px auto;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      thead {
+        background-color: #f2f2f2;
+      }
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+      }
     </style>
-</head>
-<body>
+    <script>
+      function resetAppointment(appointmentId, currentType) {
+        const newType = currentType === 'unavailable' ? 'available' : 'unavailable'; // Toggle availability
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct
+    
+        const data = {
+            type: newType,
+        };
+    
+        fetch(url, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        })
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            return response.json();
+        })
+        .then((data) => {
+            console.log("Success:", data);
+            alert("Appointment status updated successfully!");
+            window.location.reload(); // Reload the page
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            alert("Error updating appointment: " + error.message);
+        });
+    }
+
+      function deleteAppointment(appointmentId) {
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
+
+        fetch(url, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Delete successful:", data);
+            alert("Appointment deleted successfully!");
+            window.location.reload(); // Reload the page to update the list of appointments
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error deleting appointment: " + error.message);
+          });
+      }
+    </script>
+  </head>
+  <body>
     {% if session %}
     <h1>All Appointments</h1>
     <div class="btn-container">
       <p class="btn"><a class="btn-link" href="/">Home</a></p>
       <p class="btn"><a class="btn-link" href="/logout">Logout</a></p>
     </div>
-    <div id='calendar'></div>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          plugins: ['dayGrid'],
-          events: [
-            {% for appointment in appointments %}
-              {
-                title: "{{ appointment.title }}",
-                start: "{{ appointment.start_time }}",
-                end: "{{ appointment.end_time }}",
-                backgroundColor: "{{ 'green' if appointment.type == 'available' else 'red' }}",
-              },
-            {% endfor %}
-          ]
-        });
-        calendar.render();
-      });
-    </script>
+    <div class="content-container">
+      {% if appointments %}
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Status</th>
+            <th>Reset</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appointment in appointments %}
+          <tr>
+            <td>{{ appointment.title }}</td>
+            <td>{{ appointment.start_time }}</td>
+            <td>{{ appointment.end_time }}</td>
+            <td>{{ appointment.type }}</td>
+            <td>
+              {% if appointment.type == 'unavailable' %}
+              <button
+                class="btn"
+                onclick="resetAppointment('{{ appointment.id }}', '{{ appointment.type }}')"
+              >
+                Reset
+              </button>
+              {% endif %}
+            </td>
+            <td>
+              <button
+                class="del-btn"
+                onclick="deleteAppointment('{{ appointment.id }}')"
+              >
+                Delete
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No appointments found.</p>
+      {% endif %}
+    </div>
     {% else %}
     <h1>Welcome, Please Login to view appointments.</h1>
     <div class="btn-container">
       <p class="btn"><a class="btn-link" href="/login">Login</a></p>
     </div>
     {% endif %}
-</body>
+  </body>
 </html>

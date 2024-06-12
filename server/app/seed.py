@@ -36,11 +36,15 @@ def seed_database():
             db.session.add(user2)
 
             today = datetime.now()
-            appointment1 = Appointment(title="Consultation", start_time=today + timedelta(days=1, hours=10), end_time=today + timedelta(days=1, hours=11), user_id=user1.id, type="consultation")
-            appointment2 = Appointment(title="Follow-up", start_time=today + timedelta(days=2, hours=14), end_time=today + timedelta(days=2, hours=15), user_id=user2.id, type="follow-up")
-            db.session.add(appointment1)
-            db.session.add(appointment2)
-
+            appointments = [
+                Appointment(title="Consultation", start_time=today + timedelta(days=1, hours=10), end_time=today + timedelta(days=1, hours=11), user_id=user1.id, type="available"),
+                Appointment(title="Follow-up", start_time=today + timedelta(days=2, hours=14), end_time=today + timedelta(days=2, hours=15), user_id=user2.id, type="unavailable"),
+                Appointment(title="Routine Check", start_time=today + timedelta(days=3, hours=9), end_time=today + timedelta(days=3, hours=10), user_id=user1.id, type="available"),
+                Appointment(title="Emergency", start_time=today + timedelta(days=4, hours=13), end_time=today + timedelta(days=4, hours=14), user_id=user2.id, type="unavailable"),
+                Appointment(title="Dental Checkup", start_time=today + timedelta(days=5, hours=8), end_time=today + timedelta(days=5, hours=9), user_id=user1.id, type="available"),
+                Appointment(title="Therapy Session", start_time=today + timedelta(days=6, hours=16), end_time=today + timedelta(days=6, hours=17), user_id=user2.id, type="unavailable")
+            ]
+            db.session.add_all(appointments)
             db.session.commit()
             print("Database successfully seeded.")
         except Exception as e:
