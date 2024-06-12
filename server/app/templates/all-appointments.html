@@ -35,6 +35,7 @@
         border-radius: 10px;
         border: none;
         transition: 0.2s;
+        color: white;
       }
 
       .btn:hover {
@@ -107,30 +108,30 @@
       }
 
       function deleteAppointment(appointmentId) {
-            const url = `/api/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
+        const url = `/api/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
 
-            fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Delete successful:', data);
-                alert('Appointment deleted successfully!');
-                window.location.reload(); // Reload the page to update the list of appointments
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-                alert('Error deleting appointment: ' + error.message);
-            });
-        }
+        fetch(url, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("Delete successful:", data);
+            alert("Appointment deleted successfully!");
+            window.location.reload(); // Reload the page to update the list of appointments
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Error deleting appointment: " + error.message);
+          });
+      }
     </script>
   </head>
   <body>
@@ -161,15 +162,21 @@
             <td>{{ appointment.user_id }}</td>
             <td>{{ appointment.type }}</td>
             <td>
+              {% if appointment.type == 'unavailable' %}
               <button
                 class="btn"
-                onclick="resetAppointment('{{ appointment.id }}', 'available')"
+                onclick="resetAppointment('{{ appointment.id }}')"
               >
                 Reset
               </button>
+              {% endif %}
             </td>
+
             <td>
-             <button class="del-btn" onclick="deleteAppointment('{{ appointment.id }}')">Delete</button>
+              <button
+                class="del-btn"
+                onclick="deleteAppointment('{{ appointment.id }}')"
+              >
                 Delete
               </button>
             </td>
