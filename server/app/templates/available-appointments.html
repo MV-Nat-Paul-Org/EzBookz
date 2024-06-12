@@ -60,7 +60,7 @@
     </style>
     <script>
       function bookAppointment(appointmentId, newType) {
-        const url = `http://127.0.0.1:3000/appointments`; // Make sure this URL is correct and matches your API endpoint
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct and matches your API endpoint
 
         const data = {
           type: newType,
@@ -81,7 +81,8 @@
           })
           .then((data) => {
             console.log("Success:", data);
-            alert("Appointment updated successfully!");
+            alert("Your appointment has been successfully booked!");
+            window.location.reload(); // This line will reload the page after the appointment has been booked
           })
           .catch((error) => {
             console.error("Error:", error);
