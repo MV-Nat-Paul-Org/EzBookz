@@ -149,7 +149,6 @@
             <th>Title</th>
             <th>Start Time</th>
             <th>End Time</th>
-            <th>User Id</th>
             <th>Type</th>
           </tr>
         </thead>
@@ -159,7 +158,6 @@
             <td>{{ appointment.title }}</td>
             <td>{{ appointment.start_time }}</td>
             <td>{{ appointment.end_time }}</td>
-            <td>{{ appointment.user_id }}</td>
             <td>{{ appointment.type }}</td>
             <td>
               {% if appointment.type == 'unavailable' %}
