@@ -23,10 +23,26 @@
         padding: 10px;
         background-color: #87cefa;
         border-radius: 10px;
+        border: none;
         transition: 0.2s;
       }
+
+      .del-btn {
+        cursor: pointer;
+        display: inline-block;
+        padding: 10px;
+        background-color: #d53434;
+        border-radius: 10px;
+        border: none;
+        transition: 0.2s;
+      }
+
       .btn:hover {
         background-color: #66b3e3;
+      }
+
+      .del-btn:hover {
+        background-color: #8a2121;
       }
       .btn-link {
         text-decoration: none;
@@ -59,8 +75,8 @@
       }
     </style>
     <script>
-      function bookAppointment(appointmentId, newType) {
-        const url = `http://127.0.0.1:3000/appointments`; // Make sure this URL is correct and matches your API endpoint
+      function resetAppointment(appointmentId, newType) {
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct and matches your API endpoint
 
         const data = {
           type: newType,
@@ -81,13 +97,40 @@
           })
           .then((data) => {
             console.log("Success:", data);
-            alert("Appointment updated successfully!");
+            alert("Appointment was reset successfully!");
+            window.location.reload(); // This line will reload the page after the appointment has been booked
           })
           .catch((error) => {
             console.error("Error:", error);
             alert("Error updating appointment: " + error.message);
           });
       }
+
+      function deleteAppointment(appointmentId) {
+            const url = `/api/appointments/${appointmentId}`; // Adjust the URL to match your API endpoint
+
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Delete successful:', data);
+                alert('Appointment deleted successfully!');
+                window.location.reload(); // Reload the page to update the list of appointments
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('Error deleting appointment: ' + error.message);
+            });
+        }
     </script>
   </head>
   <body>
@@ -120,9 +163,14 @@
             <td>
               <button
                 class="btn"
-                onclick="bookAppointment('{{ appointment.id }}', 'unavailable')"
+                onclick="resetAppointment('{{ appointment.id }}', 'available')"
               >
-                Book
+                Reset
+              </button>
+            </td>
+            <td>
+             <button class="del-btn" onclick="deleteAppointment('{{ appointment.id }}')">Delete</button>
+                Delete
               </button>
             </td>
           </tr>
