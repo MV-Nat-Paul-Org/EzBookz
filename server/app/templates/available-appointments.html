@@ -61,7 +61,7 @@
     </style>
     <script>
       function bookAppointment(appointmentId, newType) {
-        const url = `https://ezbookz.onrender.com/appointments/${appointmentId}`; // Make sure this URL is correct and matches your API endpoint
+        const url = `http://127.0.0.1:3000/appointments/${appointmentId}`; // Make sure this URL is correct and matches your API endpoint
 
         const data = {
           type: newType,
@@ -97,11 +97,7 @@
     <h1>Available Appointments</h1>
     <div class="btn-container">
       <p class="btn"><a class="btn-link" href="/">Home</a></p>
-      <p class="btn">
-        <a class="btn-link" href="https://ezbookz.onrender.com/logout"
-          >Logout</a
-        >
-      </p>
+      <p class="btn"><a class="btn-link" href="/logout">Logout</a></p>
     </div>
     <div class="content-container">
       {% if appointments %}
@@ -139,9 +135,7 @@
     {% else %}
     <h1>Welcome, Please Login to view appointments.</h1>
     <div class="btn-container">
-      <p class="btn">
-        <a class="btn-link" href="https://ezbookz.onrender.com/login">Login</a>
-      </p>
+      <p class="btn"><a class="btn-link" href="/login">Login</a></p>
     </div>
     {% endif %}
   </body>
