@@ -43,14 +43,14 @@
     <h1>Welcome {{session.userinfo.name}}!</h1>
     <div class="btn-container">
       <p class="btn">
-        <a class="btn-link" href="https://ezbookz.onrender.com/appointments">View Appointments</a>
+        <a class="btn-link" href="/appointments">View Appointments</a>
       </p>
-      <p class="btn"><a class="btn-link" href="https://ezbookz.onrender.com/logout">Logout </a></p>
+      <p class="btn"><a class="btn-link" href="/logout">Logout </a></p>
     </div>
     {% else %}
     <h1>Welcome, Please Login to view appointments.</h1>
     <div class="btn-container">
-      <p class="btn"><a class="btn-link" href="https://ezbookz.onrender.com/login">Login</a></p>
+      <p class="btn"><a class="btn-link" href="/login">Login</a></p>
     </div>
     {% endif %}
   </body>
