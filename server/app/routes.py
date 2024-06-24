@@ -123,7 +123,7 @@ def init_routes(app):
 
     @api.route('/appointments', methods=['GET'])
     def get_appointments():
-        if is_logged_in:
+        if is_logged_in():
             if is_Admin():
                 appointments = Appointment.query.all()
                 return render_template("all-appointments.html", session=session.get('user'), appointments=appointments)
